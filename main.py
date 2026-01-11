@@ -11,13 +11,13 @@ import pandas as pd
 import numpy as np
 
 # Import from our modules
-from src.data_loader import (
+from data_loader import (
     load_data, engineer_features, build_event_data, 
     get_close_series_yf, clean_ticker_column, normalize_dates
 )
-from src.preprocessing import preprocess_for_ml, CORE_FEATURES_SCALED, CORE_FEATURES_CATEGORICAL
-from src.models import train_and_evaluate, get_valid_data, create_metrics_df, XGB_PARAMS
-from src.evaluation import (
+from preprocessing import preprocess_for_ml, CORE_FEATURES_SCALED, CORE_FEATURES_CATEGORICAL
+from models import train_and_evaluate, get_valid_data, create_metrics_df, XGB_PARAMS
+from evaluation import (
     compute_naive_benchmarks, regression_metrics, make_metrics_table,
     create_performance_visualizations, create_ranking_table
 )
@@ -30,12 +30,11 @@ warnings.filterwarnings('ignore')
 # =========================
 
 # File paths - UPDATE THESE TO YOUR PATHS
-IN_PATH = Path(r"data/raw/dfs_features_safe.xlsx")
-OUT_PATH = Path(r"results/ml_output.xlsx")
-RESULTS_PATH = Path(r"results/model_results_FINAL_v2.xlsx")
+IN_PATH = Path(r"C:\Users\User\Desktop\Test1\dfs_features_safe.xlsx")
+OUT_PATH = Path(r"C:\Users\User\Desktop\Test1\ml_output.xlsx")
+RESULTS_PATH = Path(r"C:\Users\User\Desktop\Test1\model_results_FINAL_v2.xlsx")
 
 # Create directories if they don't exist
-IN_PATH.parent.mkdir(parents=True, exist_ok=True)
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -46,7 +45,7 @@ INDEX_TICKER = "^AXMM"
 TEST_FRAC = 0.20
 MOMENTUM_WINDOW = 30
 
-# Cache settings
+# Cache settings - CRITICAL: Use same location as monolithic version
 USE_CACHE = True
 CACHE_DIR = IN_PATH.parent / "_cache"
 CACHE_DIR.mkdir(exist_ok=True)
@@ -73,8 +72,12 @@ def main():
     print("PART 1: DATA PREPARATION & FEATURE ENGINEERING")
     print("=" * 70)
 
-    # 1. Load data
-    dfs, delisted_map = load_data(IN_PATH, USE_CACHE, CACHE_INPUTS)
+    # 1. Load data - PASS CACHE PARAMETERS EXPLICITLY
+    dfs, delisted_map = load_data(
+        input_path=IN_PATH, 
+        use_cache=USE_CACHE, 
+        cache_inputs_path=CACHE_INPUTS
+    )
 
     # 2. Feature engineering
     print("\n⟳ Engineering features...")
@@ -91,16 +94,31 @@ def main():
     model_df = features_df[["Ticker", "announcement_date"] + final_features].copy()
     print(f"✓ Created {len(final_features)} features for {len(model_df)} records")
 
-    # 3. Download index data
+    # 3. Download index data - PASS CACHE PARAMETERS
     print("\n⟳ Downloading index data...")
     ann_min = pd.to_datetime(dfs["announcement_date"]).min()
     ann_max = pd.to_datetime(dfs["announcement_date"]).max()
     idx_start = ann_min - pd.Timedelta(days=CALENDAR_BUFFER_DAYS)
     idx_end = ann_max + pd.Timedelta(days=CALENDAR_BUFFER_DAYS)
-    index_close_s = get_close_series_yf(INDEX_TICKER, idx_start, idx_end, USE_CACHE, CACHE_YF_DIR)
+    index_close_s = get_close_series_yf(
+        ticker=INDEX_TICKER, 
+        start=idx_start, 
+        end=idx_end, 
+        use_cache=USE_CACHE, 
+        cache_dir=CACHE_YF_DIR
+    )
 
-    # 4. Build event data
-    pivot_df, skip_df = build_event_data(dfs, delisted_map, index_close_s, N_TRADING_DAYS)
+    # 4. Build event data - PASS ALL PARAMETERS
+    pivot_df, skip_df = build_event_data(
+        dfs=dfs, 
+        delisted_map=delisted_map, 
+        index_close_s=index_close_s, 
+        n_trading_days=N_TRADING_DAYS,
+        calendar_buffer_days=CALENDAR_BUFFER_DAYS,
+        max_workers=10,
+        use_cache=USE_CACHE,
+        cache_yf_dir=CACHE_YF_DIR
+    )
 
     # 5. Add benchmarks
     if not pivot_df.empty:
@@ -169,9 +187,13 @@ def main():
 
     print(f"✓ ML table: {len(ml_df)} rows, {len(ml_df.columns)} columns")
 
-    # 9. Preprocess features
+    # 9. Preprocess features - PASS OUTPUT DIRECTORY
     print("\n⟳ Preprocessing features for ML...")
-    ml_df_processed, summary_df, scaled_cols, cat_cols = preprocess_for_ml(ml_df, MOMENTUM_WINDOW)
+    ml_df_processed, summary_df, scaled_cols, cat_cols = preprocess_for_ml(
+        ml_df=ml_df, 
+        momentum_window=MOMENTUM_WINDOW,
+        output_dir=OUT_PATH.parent
+    )
 
     # 10. Save intermediate outputs
     print(f"\n⟳ Saving intermediate outputs to {OUT_PATH}...")
@@ -201,7 +223,7 @@ def main():
     print("\n" + "=" * 70)
     print("PART 2: ML MODEL TRAINING & EVALUATION")
     print("=" * 70)
-    
+
     print("\n🎯 Goal: Improve Ensemble Directional Accuracy to 75-77%")
     print("         While maintaining Gap < 0.25")
 
@@ -435,10 +457,8 @@ def main():
     print(f"  2. {RESULTS_PATH} (model results)")
     print(f"  3. {OUT_PATH.parent / 'features_original.png'}")
     print(f"  4. {OUT_PATH.parent / 'features_scaled.png'}")
-    print(f"\n  📊 MODEL COMPARISON CHARTS (11 total):")
-    for i in range(1, 12):
-        if i != 6:  # Skip 6 as it doesn't exist
-            print(f"  {i+3}. Chart #{i}")
+    print(f"\n  📊 MODEL COMPARISON CHARTS (10 total):")
+    print(f"  5-14. Performance visualization charts")
 
     print("\n" + "=" * 70)
     print("✓ PIPELINE COMPLETE!")
