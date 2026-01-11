@@ -7,6 +7,7 @@ Handles feature scaling, transformations, and preparation for ML models.
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from pathlib import Path
 from sklearn.preprocessing import RobustScaler, StandardScaler
 from scipy.stats import mstats
 
@@ -145,7 +146,7 @@ def fit_scaler_train_only(train_df, test_df, column, scaler_type='robust'):
     return train_transformed, test_transformed, scaler
 
 
-def preprocess_for_ml(ml_df, momentum_window=30):
+def preprocess_for_ml(ml_df, momentum_window=30, output_dir=None):
     """
     Preprocess features for ML modeling
     
@@ -155,6 +156,8 @@ def preprocess_for_ml(ml_df, momentum_window=30):
         Merged ML dataframe
     momentum_window : int
         Window for momentum calculation
+    output_dir : Path, optional
+        Directory to save histogram images (if None, uses current directory)
         
     Returns
     -------
@@ -164,6 +167,12 @@ def preprocess_for_ml(ml_df, momentum_window=30):
     print("\n" + "=" * 60)
     print("ML FEATURE PREPROCESSING")
     print("=" * 60)
+
+    # Set output directory
+    if output_dir is None:
+        output_dir = Path.cwd()
+    else:
+        output_dir = Path(output_dir)
 
     # Momentum feature
     print(f"\n⟳ Computing index momentum (t-{momentum_window} to t0)...")
@@ -241,7 +250,7 @@ def preprocess_for_ml(ml_df, momentum_window=30):
 
     # Create visualizations
     print("\n⟳ Creating histograms...")
-    create_feature_histograms(original_features, scaled_features, preprocessing_config)
+    create_feature_histograms(original_features, scaled_features, preprocessing_config, output_dir)
 
     # Summary
     summary_df = create_preprocessing_summary(original_features, scaled_features, preprocessing_config)
@@ -262,7 +271,7 @@ def preprocess_for_ml(ml_df, momentum_window=30):
     return ml_df, summary_df, scaled_feature_cols, categorical_features
 
 
-def create_feature_histograms(original_features, scaled_features, preprocessing_config):
+def create_feature_histograms(original_features, scaled_features, preprocessing_config, output_dir):
     """
     Create histogram visualizations for features
     
@@ -274,14 +283,14 @@ def create_feature_histograms(original_features, scaled_features, preprocessing_
         Dictionary of scaled feature series
     preprocessing_config : dict
         Preprocessing configuration
+    output_dir : Path
+        Directory to save images
         
     Returns
     -------
     None
         Saves PNG files
     """
-    from pathlib import Path
-    
     n_features = len(preprocessing_config)
     n_cols = 3
     n_rows = int(np.ceil(n_features / n_cols))
@@ -311,7 +320,7 @@ def create_feature_histograms(original_features, scaled_features, preprocessing_
         axes1[idx].axis('off')
 
     plt.tight_layout()
-    save_path = Path.cwd() / "features_original.png"
+    save_path = output_dir / "features_original.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     print("✓ Saved: features_original.png")
     plt.close()
@@ -341,7 +350,7 @@ def create_feature_histograms(original_features, scaled_features, preprocessing_
         axes2[idx].axis('off')
 
     plt.tight_layout()
-    save_path = Path.cwd() / "features_scaled.png"
+    save_path = output_dir / "features_scaled.png"
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     print("✓ Saved: features_scaled.png")
     plt.close()

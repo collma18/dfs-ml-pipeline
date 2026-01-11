@@ -259,19 +259,7 @@ def impute_commodity_prices(features_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def engineer_features(dfs: pd.DataFrame) -> pd.DataFrame:
-    """
-    Create all ML features from raw DFS data
-    
-    Parameters
-    ----------
-    dfs : pd.DataFrame
-        Raw DFS data
-        
-    Returns
-    -------
-    pd.DataFrame
-        DataFrame with engineered features
-    """
+    """Create all ML features"""
     features_df = dfs.reset_index(drop=True).copy()
     features_df["row_id"] = features_df.index
 
@@ -326,7 +314,7 @@ def engineer_features(dfs: pd.DataFrame) -> pd.DataFrame:
 
 
 # =========================
-# MARKET DATA FUNCTIONS
+# MARKET DATA
 # =========================
 
 def get_close_series_yf(ticker: str, start: pd.Timestamp, end: pd.Timestamp,
@@ -476,7 +464,9 @@ def download_ticker_data(args):
 
 
 def build_event_data(dfs: pd.DataFrame, delisted_map: Dict, index_close_s: pd.Series,
-                    n_trading_days: int = 30, max_workers: int = 10):
+                    n_trading_days: int = 30, calendar_buffer_days: int = 260, 
+                    max_workers: int = 10, use_cache: bool = True, 
+                    cache_yf_dir: Optional[Path] = None):
     """
     Build event study data with parallel downloads
     
@@ -490,8 +480,14 @@ def build_event_data(dfs: pd.DataFrame, delisted_map: Dict, index_close_s: pd.Se
         Market index price series
     n_trading_days : int
         Event window size
+    calendar_buffer_days : int
+        Days to download before/after announcement
     max_workers : int
         Number of parallel download workers
+    use_cache : bool
+        Whether to use cached data
+    cache_yf_dir : Path, optional
+        Yahoo Finance cache directory
         
     Returns
     -------
@@ -502,15 +498,8 @@ def build_event_data(dfs: pd.DataFrame, delisted_map: Dict, index_close_s: pd.Se
 
     dfs_iter = dfs.reset_index(drop=True)
     
-    # For parallel download, we need to pass cache settings
-    # This is a simplified version - in practice you'd pass these as parameters
-    calendar_buffer = 260
-    use_cache = True
-    cache_dir = Path(__file__).parent.parent / "_cache" / "yf"
-    cache_dir.mkdir(parents=True, exist_ok=True)
-    
     args_list = [(i, r["Ticker"], r["announcement_date"], delisted_map, 
-                  n_trading_days, calendar_buffer, use_cache, cache_dir)
+                  n_trading_days, calendar_buffer_days, use_cache, cache_yf_dir)
                  for i, r in dfs_iter.iterrows()]
 
     rows, skip_log = [], []
