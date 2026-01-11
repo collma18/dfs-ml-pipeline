@@ -30,11 +30,12 @@ warnings.filterwarnings('ignore')
 # =========================
 
 # File paths - UPDATE THESE TO YOUR PATHS
-IN_PATH = Path(r"C:\Users\User\Desktop\Test1\dfs_features_safe.xlsx")
-OUT_PATH = Path(r"C:\Users\User\Desktop\Test1\ml_output.xlsx")
-RESULTS_PATH = Path(r"C:\Users\User\Desktop\Test1\model_results_FINAL_v2.xlsx")
+IN_PATH = Path(r"data/raw/dfs_features_safe.xlsx")
+OUT_PATH = Path(r"results/ml_output.xlsx")
+RESULTS_PATH = Path(r"results/model_results_FINAL_v2.xlsx")
 
 # Create directories if they don't exist
+IN_PATH.parent.mkdir(parents=True, exist_ok=True)
 OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 RESULTS_PATH.parent.mkdir(parents=True, exist_ok=True)
 

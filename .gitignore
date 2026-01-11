@@ -44,10 +44,7 @@ venv.bak/
 # Rope
 .ropeproject
 
-# Data files - DO NOT COMMIT LARGE FILES
-data/raw/*.xlsx
-data/raw/*.csv
-data/raw/*.xls
+
 *.pkl
 _cache/
 **/_cache/
