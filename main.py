@@ -11,13 +11,13 @@ import pandas as pd
 import numpy as np
 
 # Import from our modules
-from data_loader import (
+from src.data_loader import (
     load_data, engineer_features, build_event_data, 
     get_close_series_yf, clean_ticker_column, normalize_dates
 )
-from preprocessing import preprocess_for_ml, CORE_FEATURES_SCALED, CORE_FEATURES_CATEGORICAL
-from models import train_and_evaluate, get_valid_data, create_metrics_df, XGB_PARAMS
-from evaluation import (
+from src.preprocessing import preprocess_for_ml, CORE_FEATURES_SCALED, CORE_FEATURES_CATEGORICAL
+from src.models import train_and_evaluate, get_valid_data, create_metrics_df, XGB_PARAMS
+from src.evaluation import (
     compute_naive_benchmarks, regression_metrics, make_metrics_table,
     create_performance_visualizations, create_ranking_table
 )
